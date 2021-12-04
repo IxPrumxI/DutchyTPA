@@ -45,6 +45,11 @@ public class CommandHandler implements CommandExecutor {
 		  sender.sendMessage(ChatColor.GOLD + "You already have a pending request!");
 		  return false;
 		}
+		if(plugin.costEnabled && ((Player) sender).getExpToLevel() < plugin.calculateCost(senderP, target.getLocation())) {
+		  sender.sendMessage(ChatColor.RED + "You do not have enough experience to use this command!");
+		  return false;
+		}
+
 		target.sendMessage(ChatColor.RED + senderP.getName() + ChatColor.GOLD + " wants to teleport to you. \nType " + ChatColor.RED + "/tpaccept" + ChatColor.GOLD + " to accept this request.\nType " + ChatColor.RED + "/tpdeny" + ChatColor.GOLD + " to deny this request.\nYou have 5 minutes to respond.");
 		targetMap.put(senderP.getUniqueId(), target.getUniqueId());
 		sender.sendMessage(ChatColor.GOLD + "Send TPA request to " + ChatColor.RED + target.getName());
@@ -67,6 +72,12 @@ public class CommandHandler implements CommandExecutor {
 		for (Map.Entry<UUID, UUID> entry : targetMap.entrySet()) {
 		  if (((UUID)entry.getValue()).equals(senderP.getUniqueId())) {
 			Player tpRequester = Bukkit.getPlayer(entry.getKey());
+			if(plugin.costEnabled){
+				if(tpRequester.getLevel() < plugin.calculateCost(tpRequester, senderP.getLocation())) {
+					sender.sendMessage(ChatColor.RED + "He/She does not have enough experience to teleport!");
+				}
+				tpRequester.setLevel(tpRequester.getLevel() - plugin.calculateCost(tpRequester, senderP.getLocation()));
+			}
 			SuccessfulTpaEvent event = new SuccessfulTpaEvent(tpRequester, tpRequester.getLocation());
 			Bukkit.getPluginManager().callEvent(event);
 			tpRequester.teleport((Entity)senderP);

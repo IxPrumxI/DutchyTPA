@@ -1,0 +1,17 @@
+tpa:
+  # The cost of a TPA.
+  cost:
+    enabled: false
+
+    # Cost this for dimension TPA.
+    dimension-change: 1
+
+    # Cost this per every said distance
+    per_block:
+      enabled: false
+      distance: 1000
+      cost: 1
+    # Cost this regardless of the distance
+    per_tpa:
+      enabled: false
+      cost: 1
