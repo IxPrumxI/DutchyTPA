@@ -8,13 +8,11 @@ import org.bukkit.ChatColor;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandExecutor;
 import org.bukkit.command.CommandSender;
-import org.bukkit.entity.Entity;
 import org.bukkit.entity.Player;
-import org.bukkit.plugin.Plugin;
 import org.bukkit.scheduler.BukkitRunnable;
 
 public class CommandHandler implements CommandExecutor {
-  private Tpa plugin;
+  private final Tpa plugin;
 
   public CommandHandler(Tpa plugin) {
 	this.plugin = plugin;
@@ -31,13 +29,13 @@ public class CommandHandler implements CommandExecutor {
 	  if (!sender.hasPermission("tpa.tpa"))
 		sender.sendMessage(ChatColor.RED + "You do not have permission to use this command!");
 	  if (args.length == 1) {
-		if (!Bukkit.getOnlinePlayers().contains(Bukkit.getPlayer(args[0]))) {
+		Player target = Bukkit.getPlayer(args[0]);
+		if (target == null) {
 		  sender.sendMessage(ChatColor.RED + "Player is not online!");
 		  return true;
 		}
-		Player target = Bukkit.getPlayer(args[0]);
 		final Player senderP = (Player)sender;
-		if (target.getUniqueId().equals(senderP.getUniqueId())) {
+		if (target.equals(senderP)) {
 		  sender.sendMessage(ChatColor.RED + "You may not teleport to yourself!");
 		  return true;
 		}
@@ -57,9 +55,9 @@ public class CommandHandler implements CommandExecutor {
 			public void run() {
 			  CommandHandler.targetMap.remove(senderP.getUniqueId());
 			}
-		  }).runTaskLaterAsynchronously((Plugin)this.plugin, 6000L);
+		  }).runTaskLaterAsynchronously(this.plugin, 6000L);
 	  } else {
-		sender.sendMessage(ChatColor.RED + "Invalid synax!");
+		sender.sendMessage(ChatColor.RED + "Invalid syntax!");
 	  }
 	  return true;
 	}
@@ -70,8 +68,9 @@ public class CommandHandler implements CommandExecutor {
 	  if (targetMap.containsValue(senderP.getUniqueId())) {
 		sender.sendMessage(ChatColor.GOLD + "TPA request accepted!");
 		for (Map.Entry<UUID, UUID> entry : targetMap.entrySet()) {
-		  if (((UUID)entry.getValue()).equals(senderP.getUniqueId())) {
+		  if (entry.getValue().equals(senderP.getUniqueId())) {
 			Player tpRequester = Bukkit.getPlayer(entry.getKey());
+			if(tpRequester == null) break;
 			if(plugin.costEnabled){
 				if(tpRequester.getLevel() < plugin.calculateCost(tpRequester, senderP.getLocation())) {
 					sender.sendMessage(ChatColor.RED + "He/She does not have enough experience to teleport!");
@@ -80,7 +79,7 @@ public class CommandHandler implements CommandExecutor {
 			}
 			SuccessfulTpaEvent event = new SuccessfulTpaEvent(tpRequester, tpRequester.getLocation());
 			Bukkit.getPluginManager().callEvent(event);
-			tpRequester.teleport((Entity)senderP);
+			tpRequester.teleport(senderP);
 			targetMap.remove(entry.getKey());
 			break;
 		  }
@@ -96,11 +95,13 @@ public class CommandHandler implements CommandExecutor {
 	  final Player senderP = (Player)sender;
 	  if (targetMap.containsValue(senderP.getUniqueId())) {
 		for (Map.Entry<UUID, UUID> entry : targetMap.entrySet()) {
-		  if (((UUID)entry.getValue()).equals(senderP.getUniqueId())) {
+		  if (entry.getValue().equals(senderP.getUniqueId())) {
 			targetMap.remove(entry.getKey());
 			Player originalSender = Bukkit.getPlayer(entry.getKey());
-			originalSender.sendMessage(ChatColor.GOLD + "Your TPA request was denied!");
-			sender.sendMessage(ChatColor.GOLD + "Denied TPA request.");
+			  if (originalSender != null) {
+				  originalSender.sendMessage(ChatColor.GOLD + "Your TPA request was denied!");
+			  }
+			  sender.sendMessage(ChatColor.GOLD + "Denied TPA request.");
 			break;
 		  }
 		}
